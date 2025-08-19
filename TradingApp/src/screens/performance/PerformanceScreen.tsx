@@ -1,148 +1,168 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Dimensions } from 'react-native';
-import { Text, DataTable } from 'react-native-paper';
-import Card from '../../components/common/Card';
-import { colors } from '../../styles/theme';
-
-const { width } = Dimensions.get('window');
-
-interface PerformanceData {
-  id: number;
-  strategyName: string;
-  pnl: number;
-  trades: number;
-  winRate: number;
-}
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { Text, Card, SegmentedButtons } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { colors, spacing, typography } from '../../styles/theme';
+import { formatCurrency, formatPercentage } from '../../utils/formatters';
 
 const PerformanceScreen = () => {
-  const [performanceData, setPerformanceData] = useState<PerformanceData[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState('today');
 
-  const mockPerformanceData: PerformanceData[] = [
-    {
-      id: 1,
-      strategyName: 'DeltaSync Nifty',
-      pnl: 15420.50,
-      trades: 45,
-      winRate: 78.5,
-    },
-    {
-      id: 2,
-      strategyName: 'BankNifty Breakout',
-      pnl: -2340.25,
-      trades: 32,
-      winRate: 65.2,
-    },
-    {
-      id: 3,
-      strategyName: 'Option Scalper',
-      pnl: 8750.75,
-      trades: 67,
-      winRate: 82.1,
-    },
+  const periods = [
+    { value: 'today', label: 'Today' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
   ];
 
-  useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setPerformanceData(mockPerformanceData);
-    }, 1000);
-  }, []);
+  // Mock performance data
+  const performanceData = {
+    today: {
+      totalPnl: 1250.75,
+      totalTrades: 12,
+      winningTrades: 8,
+      losingTrades: 4,
+      winRate: 66.67,
+      avgWin: 245.50,
+      avgLoss: -125.25,
+      maxWin: 450.00,
+      maxLoss: -200.00,
+      profitFactor: 1.96,
+    },
+    week: {
+      totalPnl: 5420.30,
+      totalTrades: 45,
+      winningTrades: 32,
+      losingTrades: 13,
+      winRate: 71.11,
+      avgWin: 285.75,
+      avgLoss: -145.80,
+      maxWin: 650.00,
+      maxLoss: -320.00,
+      profitFactor: 2.15,
+    },
+    month: {
+      totalPnl: 18750.85,
+      totalTrades: 156,
+      winningTrades: 108,
+      losingTrades: 48,
+      winRate: 69.23,
+      avgWin: 295.20,
+      avgLoss: -155.40,
+      maxWin: 850.00,
+      maxLoss: -420.00,
+      profitFactor: 2.08,
+    },
+    year: {
+      totalPnl: 125420.50,
+      totalTrades: 1245,
+      winningTrades: 856,
+      losingTrades: 389,
+      winRate: 68.75,
+      avgWin: 305.85,
+      avgLoss: -165.25,
+      maxWin: 1250.00,
+      maxLoss: -650.00,
+      profitFactor: 2.12,
+    },
+  };
 
-  const totalPnL = performanceData.reduce((sum, item) => sum + item.pnl, 0);
-  const totalTrades = performanceData.reduce((sum, item) => sum + item.trades, 0);
-  const avgWinRate = performanceData.length > 0 
-    ? performanceData.reduce((sum, item) => sum + item.winRate, 0) / performanceData.length 
-    : 0;
+  const currentData = performanceData[selectedPeriod as keyof typeof performanceData];
+
+  const MetricCard = ({ title, value, isPositive }: { title: string; value: string; isPositive?: boolean }) => (
+    <Card style={styles.metricCard}>
+      <Text style={styles.metricTitle}>{title}</Text>
+      <Text style={[
+        styles.metricValue,
+        isPositive !== undefined && {
+          color: isPositive ? colors.profit : colors.loss
+        }
+      ]}>
+        {value}
+      </Text>
+    </Card>
+  );
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text variant="headlineSmall" style={styles.screenTitle}>
-          Performance Analytics
-        </Text>
-
-        {/* Summary Cards */}
-        <View style={styles.summaryRow}>
-          <Card style={styles.summaryCard}>
-            <Text variant="bodySmall" style={styles.summaryLabel}>Total P&L</Text>
-            <Text 
-              variant="titleMedium" 
-              style={[
-                styles.summaryValue,
-                { color: totalPnL >= 0 ? colors.status.success : colors.status.error }
-              ]}
-            >
-              ₹{totalPnL.toFixed(2)}
-            </Text>
-          </Card>
-
-          <Card style={styles.summaryCard}>
-            <Text variant="bodySmall" style={styles.summaryLabel}>Total Trades</Text>
-            <Text variant="titleMedium" style={styles.summaryValue}>
-              {totalTrades}
-            </Text>
-          </Card>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.title}>Performance Analytics</Text>
+        
+        <View style={styles.periodSelector}>
+          <SegmentedButtons
+            value={selectedPeriod}
+            onValueChange={setSelectedPeriod}
+            buttons={periods}
+          />
         </View>
-
-        <View style={styles.summaryRow}>
-          <Card style={styles.summaryCard}>
-            <Text variant="bodySmall" style={styles.summaryLabel}>Avg Win Rate</Text>
-            <Text variant="titleMedium" style={styles.summaryValue}>
-              {avgWinRate.toFixed(1)}%
-            </Text>
-          </Card>
-
-          <Card style={styles.summaryCard}>
-            <Text variant="bodySmall" style={styles.summaryLabel}>Active Strategies</Text>
-            <Text variant="titleMedium" style={styles.summaryValue}>
-              {performanceData.length}
-            </Text>
-          </Card>
+        
+        <View style={styles.metricsGrid}>
+          <MetricCard
+            title="Total P&L"
+            value={formatCurrency(currentData.totalPnl)}
+            isPositive={currentData.totalPnl >= 0}
+          />
+          <MetricCard
+            title="Win Rate"
+            value={formatPercentage(currentData.winRate)}
+          />
+          <MetricCard
+            title="Total Trades"
+            value={currentData.totalTrades.toString()}
+          />
+          <MetricCard
+            title="Profit Factor"
+            value={currentData.profitFactor.toFixed(2)}
+          />
         </View>
-
-        {/* Performance Table */}
-        <Card style={styles.tableCard}>
-          <Text variant="titleMedium" style={styles.tableTitle}>
-            Strategy Performance
-          </Text>
-
-          <DataTable>
-            <DataTable.Header>
-              <DataTable.Title>Strategy</DataTable.Title>
-              <DataTable.Title numeric>P&L</DataTable.Title>
-              <DataTable.Title numeric>Trades</DataTable.Title>
-              <DataTable.Title numeric>Win %</DataTable.Title>
-            </DataTable.Header>
-
-            {performanceData.map((item) => (
-              <DataTable.Row key={item.id}>
-                <DataTable.Cell>
-                  <Text variant="bodySmall" numberOfLines={1}>
-                    {item.strategyName}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric>
-                  <Text 
-                    variant="bodySmall"
-                    style={{ 
-                      color: item.pnl >= 0 ? colors.status.success : colors.status.error 
-                    }}
-                  >
-                    ₹{item.pnl.toFixed(0)}
-                  </Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric>
-                  <Text variant="bodySmall">{item.trades}</Text>
-                </DataTable.Cell>
-                <DataTable.Cell numeric>
-                  <Text variant="bodySmall">{item.winRate.toFixed(1)}%</Text>
-                </DataTable.Cell>
-              </DataTable.Row>
-            ))}
-          </DataTable>
+        
+        <Card style={styles.detailCard}>
+          <Text style={styles.cardTitle}>Trade Statistics</Text>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Winning Trades:</Text>
+            <Text style={[styles.statValue, { color: colors.profit }]}>
+              {currentData.winningTrades}
+            </Text>
+          </View>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Losing Trades:</Text>
+            <Text style={[styles.statValue, { color: colors.loss }]}>
+              {currentData.losingTrades}
+            </Text>
+          </View>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Average Win:</Text>
+            <Text style={[styles.statValue, { color: colors.profit }]}>
+              {formatCurrency(currentData.avgWin)}
+            </Text>
+          </View>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Average Loss:</Text>
+            <Text style={[styles.statValue, { color: colors.loss }]}>
+              {formatCurrency(currentData.avgLoss)}
+            </Text>
+          </View>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Max Win:</Text>
+            <Text style={[styles.statValue, { color: colors.profit }]}>
+              {formatCurrency(currentData.maxWin)}
+            </Text>
+          </View>
+          
+          <View style={styles.statRow}>
+            <Text style={styles.statLabel}>Max Loss:</Text>
+            <Text style={[styles.statValue, { color: colors.loss }]}>
+              {formatCurrency(currentData.maxLoss)}
+            </Text>
+          </View>
         </Card>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -151,42 +171,68 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
-    padding: 16,
-  },
-  screenTitle: {
-    marginBottom: 20,
-    marginTop: 20,
-    color: colors.text.primary,
-    fontWeight: 'bold',
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
-  },
-  summaryCard: {
+  scrollView: {
     flex: 1,
+  },
+  title: {
+    ...typography.h2,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    color: colors.text,
+  },
+  periodSelector: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  metricsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  metricCard: {
+    width: '48%',
+    padding: spacing.md,
+    marginBottom: spacing.sm,
     alignItems: 'center',
-    paddingVertical: 16,
   },
-  summaryLabel: {
-    color: colors.text.tertiary,
-    marginBottom: 8,
+  metricTitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
     textAlign: 'center',
   },
-  summaryValue: {
-    color: colors.text.primary,
+  metricValue: {
+    ...typography.h3,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  detailCard: {
+    marginHorizontal: spacing.md,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+  },
+  cardTitle: {
+    ...typography.h3,
+    marginBottom: spacing.md,
+    color: colors.text,
+  },
+  statRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  statLabel: {
+    ...typography.body,
+    color: colors.text,
+  },
+  statValue: {
+    ...typography.body,
     fontWeight: 'bold',
-    textAlign: 'center',
-  },
-  tableCard: {
-    marginTop: 8,
-  },
-  tableTitle: {
-    marginBottom: 16,
-    color: colors.text.primary,
-    fontWeight: '600',
   },
 });
 

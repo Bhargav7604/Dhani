@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card as PaperCard } from 'react-native-paper';
-import { colors } from '../../styles/theme';
+import { colors, spacing } from '../../styles/theme';
 
 interface CardProps {
   children: React.ReactNode;
@@ -22,9 +22,8 @@ const Card: React.FC<CardProps> = ({ children, style, elevation = 2 }) => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 12,
-    marginVertical: 8,
-    marginHorizontal: 16,
+    marginVertical: spacing.xs,
+    marginHorizontal: spacing.sm,
   },
 });
 

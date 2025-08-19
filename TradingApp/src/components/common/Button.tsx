@@ -27,9 +27,8 @@ const Button: React.FC<ButtonProps> = ({
       onPress={onPress}
       disabled={disabled}
       loading={loading}
-      style={[{ marginVertical: 8 }, style]}
+      style={style}
       buttonColor={mode === 'contained' ? color : undefined}
-      textColor={mode === 'contained' ? 'white' : color}
     >
       {title}
     </PaperButton>

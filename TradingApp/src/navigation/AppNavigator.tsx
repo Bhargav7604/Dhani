@@ -1,8 +1,10 @@
 import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppSelector } from '../store/store';
+import { useSelector } from 'react-redux';
+import { MaterialIcons } from '@expo/vector-icons';
+import { RootState } from '../store/store';
 
 // Screens
 import LoginScreen from '../screens/auth/LoginScreen';
@@ -20,25 +22,25 @@ const TabNavigator = () => {
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
-          let iconName: keyof typeof Ionicons.glyphMap;
+          let iconName: keyof typeof MaterialIcons.glyphMap;
 
           if (route.name === 'Deployed') {
-            iconName = focused ? 'trending-up' : 'trending-up-outline';
+            iconName = 'dashboard';
           } else if (route.name === 'Strategies') {
-            iconName = focused ? 'list' : 'list-outline';
+            iconName = 'trending-up';
           } else if (route.name === 'Builder') {
-            iconName = focused ? 'construct' : 'construct-outline';
+            iconName = 'build';
           } else if (route.name === 'Performance') {
-            iconName = focused ? 'analytics' : 'analytics-outline';
+            iconName = 'analytics';
           } else if (route.name === 'Profile') {
-            iconName = focused ? 'person' : 'person-outline';
+            iconName = 'person';
           } else {
-            iconName = 'help-outline';
+            iconName = 'help';
           }
 
-          return <Ionicons name={iconName} size={size} color={color} />;
+          return <MaterialIcons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#1667D9',
+        tabBarActiveTintColor: '#6200ee',
         tabBarInactiveTintColor: 'gray',
         headerShown: false,
       })}
@@ -53,16 +55,18 @@ const TabNavigator = () => {
 };
 
 const AppNavigator = () => {
-  const isAuthenticated = useAppSelector(state => state.auth.isAuthenticated);
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
 
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      {!isAuthenticated ? (
-        <Stack.Screen name="Login" component={LoginScreen} />
-      ) : (
-        <Stack.Screen name="Main" component={TabNavigator} />
-      )}
-    </Stack.Navigator>
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {!isAuthenticated ? (
+          <Stack.Screen name="Login" component={LoginScreen} />
+        ) : (
+          <Stack.Screen name="Main" component={TabNavigator} />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 };
 

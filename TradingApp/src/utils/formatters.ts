@@ -1,38 +1,58 @@
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    minimumFractionDigits: 2,
-  }).format(amount);
+export const formatCurrency = (amount: number, currency = '₹'): string => {
+  const absAmount = Math.abs(amount);
+  const sign = amount < 0 ? '-' : '';
+  
+  if (absAmount >= 10000000) {
+    return `${sign}${currency}${(absAmount / 10000000).toFixed(2)}Cr`;
+  } else if (absAmount >= 100000) {
+    return `${sign}${currency}${(absAmount / 100000).toFixed(2)}L`;
+  } else if (absAmount >= 1000) {
+    return `${sign}${currency}${(absAmount / 1000).toFixed(2)}K`;
+  } else {
+    return `${sign}${currency}${absAmount.toFixed(2)}`;
+  }
 };
 
-export const formatNumber = (num: number): string => {
-  const absNum = Math.abs(num);
-  if (absNum >= 1e7) return `${(num / 1e7).toFixed(2)} Cr`;
-  if (absNum >= 1e5) return `${(num / 1e5).toFixed(2)} L`;
-  if (absNum >= 1e3) return `${(num / 1e3).toFixed(2)} K`;
-  return num.toLocaleString('en-IN');
+export const formatPercentage = (value: number, decimals = 2): string => {
+  return `${value.toFixed(decimals)}%`;
 };
 
-export const formatTime = (hour: number, minute: number): string => {
-  const hourInt = parseInt(hour.toString(), 10);
-  const minuteStr = minute.toString().padStart(2, '0');
-  const period = hourInt > 11 ? 'PM' : 'AM';
-  const formattedHour = hourInt % 12 === 0 ? 12 : hourInt % 12;
-  return `${formattedHour}:${minuteStr} ${period}`;
+export const formatNumber = (value: number, decimals = 2): string => {
+  return value.toLocaleString('en-IN', {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
 };
 
-export const formatDate = (timestamp: number): string => {
-  return new Date(timestamp).toLocaleDateString('en-IN');
+export const formatDate = (date: string | Date): string => {
+  const d = new Date(date);
+  return d.toLocaleDateString('en-IN', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+  });
 };
 
-export const getStatusColor = (status: string): string => {
-  switch (status.toLowerCase()) {
-    case 'live': return '#4CAF50';
-    case 'active': return '#2196F3';
-    case 'paused': return '#FF9800';
-    case 'error': return '#F44336';
-    case 'exit': return '#9C27B0';
-    default: return '#757575';
+export const formatTime = (date: string | Date): string => {
+  const d = new Date(date);
+  return d.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+export const formatDateTime = (date: string | Date): string => {
+  return `${formatDate(date)} ${formatTime(date)}`;
+};
+
+export const formatCompactNumber = (value: number): string => {
+  if (value >= 1000000000) {
+    return (value / 1000000000).toFixed(1) + 'B';
+  } else if (value >= 1000000) {
+    return (value / 1000000).toFixed(1) + 'M';
+  } else if (value >= 1000) {
+    return (value / 1000).toFixed(1) + 'K';
+  } else {
+    return value.toString();
   }
 };

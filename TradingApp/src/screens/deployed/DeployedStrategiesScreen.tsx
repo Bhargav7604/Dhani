@@ -1,193 +1,136 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Searchbar, Chip } from 'react-native-paper';
-import { useAppDispatch, useAppSelector } from '../../store/store';
-import { setDeployedStrategies, setLoading } from '../../store/slices/deployedStrategiesSlice';
-import Card from '../../components/common/Card';
-import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
+import React from 'react';
+import { View, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { Text, Card, Chip, IconButton } from 'react-native-paper';
+import { useSelector, useDispatch } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { RootState } from '../../store/store';
+import { pauseStrategy, resumeStrategy, stopStrategy } from '../../store/slices/deployedStrategiesSlice';
 import PnLBoard from '../../components/pnl/PnLBoard';
-import { colors } from '../../styles/theme';
-import { DeployedStrategy } from '../../store/slices/deployedStrategiesSlice';
+import { colors, spacing, typography } from '../../styles/theme';
+import { formatCurrency, formatPercentage } from '../../utils/formatters';
 
 const DeployedStrategiesScreen = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-  const dispatch = useAppDispatch();
-  const { deployedStrategies, loading } = useAppSelector(state => state.deployedStrategies);
-
-  const mockDeployedStrategies: DeployedStrategy[] = [
-    {
-      id: 1,
-      name: 'DeltaSync Nifty',
-      status: 'live',
-      capital: 50000,
-      multiplier: '2x',
-      execution: 'LiveTrading',
-      pnl: 2500.50,
-      positionType: 'Intraday',
-    },
-    {
-      id: 2,
-      name: 'BankNifty Breakout',
-      status: 'paused',
-      capital: 75000,
-      multiplier: '1x',
-      execution: 'PaperTrading',
-      pnl: -1200.25,
-      positionType: 'Positional',
-    },
-    {
-      id: 3,
-      name: 'Option Scalper',
-      status: 'error',
-      capital: 30000,
-      multiplier: '3x',
-      execution: 'LiveTrading',
-      pnl: 850.75,
-      positionType: 'Intraday',
-    },
-  ];
-
-  const fetchDeployedStrategies = async () => {
-    dispatch(setLoading(true));
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      dispatch(setDeployedStrategies(mockDeployedStrategies));
-    } catch (error) {
-      console.error('Failed to fetch deployed strategies:', error);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
-
-  useEffect(() => {
-    fetchDeployedStrategies();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchDeployedStrategies();
-    setRefreshing(false);
-  };
-
-  const filteredStrategies = deployedStrategies.filter(strategy =>
-    strategy.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const dispatch = useDispatch();
+  const { deployedStrategies, totalPnl, todayPnl } = useSelector(
+    (state: RootState) => state.deployedStrategies
   );
+
+  const handlePauseStrategy = (id: string) => {
+    dispatch(pauseStrategy(id));
+  };
+
+  const handleResumeStrategy = (id: string) => {
+    dispatch(resumeStrategy(id));
+  };
+
+  const handleStopStrategy = (id: string) => {
+    dispatch(stopStrategy(id));
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'live': return colors.status.success;
-      case 'paused': return colors.status.warning;
-      case 'error': return colors.status.error;
-      default: return colors.text.tertiary;
+      case 'running':
+        return colors.success;
+      case 'paused':
+        return colors.warning;
+      case 'stopped':
+        return colors.error;
+      default:
+        return colors.textSecondary;
     }
   };
 
-  const renderStrategyCard = ({ item }: { item: DeployedStrategy }) => (
+  const renderStrategyCard = ({ item }: { item: any }) => (
     <Card style={styles.strategyCard}>
       <View style={styles.cardHeader}>
         <View style={styles.strategyInfo}>
-          <Text variant="titleMedium" style={styles.strategyName}>
-            {item.name}
-          </Text>
-          <Text variant="bodySmall" style={styles.strategyId}>
-            ID: {item.id}
-          </Text>
+          <Text style={styles.strategyName}>{item.name}</Text>
+          <Chip 
+            mode="outlined" 
+            textStyle={{ color: getStatusColor(item.status) }}
+            style={{ borderColor: getStatusColor(item.status) }}
+          >
+            {item.status.toUpperCase()}
+          </Chip>
         </View>
-        <Chip 
-          style={[styles.statusChip, { backgroundColor: getStatusColor(item.status) }]}
-          textStyle={styles.statusText}
-        >
-          {item.status.toUpperCase()}
-        </Chip>
+        <View style={styles.actionButtons}>
+          {item.status === 'running' ? (
+            <IconButton
+              icon="pause"
+              size={20}
+              onPress={() => handlePauseStrategy(item.id)}
+            />
+          ) : item.status === 'paused' ? (
+            <IconButton
+              icon="play"
+              size={20}
+              onPress={() => handleResumeStrategy(item.id)}
+            />
+          ) : null}
+          <IconButton
+            icon="stop"
+            size={20}
+            onPress={() => handleStopStrategy(item.id)}
+          />
+        </View>
       </View>
-
-      <View style={styles.cardContent}>
-        <View style={styles.infoRow}>
-          <View style={styles.infoItem}>
-            <Text variant="bodySmall" style={styles.infoLabel}>Capital</Text>
-            <Text variant="bodyMedium" style={styles.infoValue}>
-              ₹{item.capital.toLocaleString()}
-            </Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text variant="bodySmall" style={styles.infoLabel}>Multiplier</Text>
-            <Text variant="bodyMedium" style={styles.infoValue}>
-              {item.multiplier}
-            </Text>
-          </View>
-          <View style={styles.infoItem}>
-            <Text variant="bodySmall" style={styles.infoLabel}>P&L</Text>
-            <Text 
-              variant="bodyMedium" 
-              style={[
-                styles.infoValue, 
-                { color: item.pnl >= 0 ? colors.status.success : colors.status.error }
-              ]}
-            >
-              ₹{item.pnl.toFixed(2)}
-            </Text>
-          </View>
+      
+      <View style={styles.metricsRow}>
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>P&L</Text>
+          <Text style={[
+            styles.metricValue,
+            { color: item.pnl >= 0 ? colors.profit : colors.loss }
+          ]}>
+            {formatCurrency(item.pnl)}
+          </Text>
         </View>
-
-        <View style={styles.buttonRow}>
-          <Button
-            title="Details"
-            mode="outlined"
-            onPress={() => console.log('View details')}
-            style={styles.actionButton}
-          />
-          <Button
-            title={item.status === 'live' ? 'Pause' : 'Resume'}
-            onPress={() => console.log('Toggle strategy')}
-            style={styles.actionButton}
-            color={item.status === 'live' ? colors.status.warning : colors.status.success}
-          />
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>Today P&L</Text>
+          <Text style={[
+            styles.metricValue,
+            { color: item.todayPnl >= 0 ? colors.profit : colors.loss }
+          ]}>
+            {formatCurrency(item.todayPnl)}
+          </Text>
         </View>
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>Win Rate</Text>
+          <Text style={styles.metricValue}>
+            {formatPercentage(item.winningTrades / item.totalTrades * 100)}
+          </Text>
+        </View>
+      </View>
+      
+      <View style={styles.additionalInfo}>
+        <Text style={styles.infoText}>
+          Capital: {formatCurrency(item.capital)}
+        </Text>
+        <Text style={styles.infoText}>
+          Trades: {item.totalTrades} ({item.winningTrades} wins)
+        </Text>
       </View>
     </Card>
   );
 
-  if (loading && deployedStrategies.length === 0) {
-    return <LoadingSpinner />;
-  }
-
   return (
-    <View style={styles.container}>
-      <PnLBoard />
-      
-      <View style={styles.content}>
-        <Text variant="headlineSmall" style={styles.screenTitle}>
-          Deployed Strategies
-        </Text>
-
-        <Searchbar
-          placeholder="Search strategies..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={styles.searchBar}
-        />
-
-        <FlatList
-          data={filteredStrategies}
-          renderItem={renderStrategyCard}
-          keyExtractor={(item) => item.id.toString()}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text variant="bodyLarge" style={styles.emptyText}>
-                No deployed strategies found
-              </Text>
-            </View>
-          }
-        />
-      </View>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.title}>Deployed Strategies</Text>
+        
+        <PnLBoard totalPnl={totalPnl} todayPnl={todayPnl} />
+        
+        <View style={styles.strategiesSection}>
+          <Text style={styles.sectionTitle}>Active Strategies</Text>
+          <FlatList
+            data={deployedStrategies}
+            renderItem={renderStrategyCard}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -196,81 +139,72 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 16,
   },
-  screenTitle: {
-    marginBottom: 16,
-    color: colors.text.primary,
-    fontWeight: 'bold',
+  title: {
+    ...typography.h2,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    color: colors.text,
   },
-  searchBar: {
-    marginBottom: 16,
-    backgroundColor: colors.surface,
+  strategiesSection: {
+    marginTop: spacing.lg,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    color: colors.text,
   },
   strategyCard: {
-    marginBottom: 8,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.xs,
+    padding: spacing.md,
   },
   cardHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   strategyInfo: {
     flex: 1,
   },
   strategyName: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
+    ...typography.h3,
+    marginBottom: spacing.xs,
+    color: colors.text,
   },
-  strategyId: {
-    color: colors.text.tertiary,
-    marginTop: 2,
+  actionButtons: {
+    flexDirection: 'row',
   },
-  statusChip: {
-    borderRadius: 16,
-  },
-  statusText: {
-    color: 'white',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  cardContent: {
-    gap: 12,
-  },
-  infoRow: {
+  metricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginBottom: spacing.md,
   },
-  infoItem: {
+  metric: {
     alignItems: 'center',
   },
-  infoLabel: {
-    color: colors.text.tertiary,
-    marginBottom: 4,
+  metricLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
-  infoValue: {
-    color: colors.text.primary,
-    fontWeight: '600',
+  metricValue: {
+    ...typography.body,
+    fontWeight: 'bold',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
+  additionalInfo: {
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingTop: spacing.sm,
   },
-  actionButton: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50,
-  },
-  emptyText: {
-    color: colors.text.tertiary,
-    textAlign: 'center',
+  infoText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
 });
 

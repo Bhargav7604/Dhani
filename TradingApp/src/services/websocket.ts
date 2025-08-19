@@ -1,39 +1,34 @@
-import { store } from '../store/store';
-import { setConnectionStatus, updatePnLData } from '../store/slices/socketSlice';
-
 class WebSocketService {
-  private static instance: WebSocketService;
   private ws: WebSocket | null = null;
+  private url: string;
   private reconnectAttempts = 0;
   private maxReconnectAttempts = 5;
   private reconnectInterval = 5000;
+  private listeners: { [key: string]: Function[] } = {};
 
-  private constructor() {}
-
-  public static getInstance(): WebSocketService {
-    if (!WebSocketService.instance) {
-      WebSocketService.instance = new WebSocketService();
-    }
-    return WebSocketService.instance;
+  constructor(url: string) {
+    this.url = url;
   }
 
-  public connect(url: string) {
+  connect() {
     try {
-      this.ws = new WebSocket(url);
-
+      this.ws = new WebSocket(this.url);
+      
       this.ws.onopen = () => {
         console.log('WebSocket connected');
-        store.dispatch(setConnectionStatus(true));
         this.reconnectAttempts = 0;
-        
-        // Send authentication data
-        this.sendAuthData();
+        this.emit('connected', true);
       };
 
       this.ws.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          this.handleMessage(data);
+          this.emit('message', data);
+          
+          // Handle specific message types
+          if (data.type) {
+            this.emit(data.type, data);
+          }
         } catch (error) {
           console.error('Error parsing WebSocket message:', error);
         }
@@ -41,68 +36,70 @@ class WebSocketService {
 
       this.ws.onclose = () => {
         console.log('WebSocket disconnected');
-        store.dispatch(setConnectionStatus(false));
-        this.attemptReconnect(url);
+        this.emit('connected', false);
+        this.handleReconnect();
       };
 
       this.ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        store.dispatch(setConnectionStatus(false));
+        this.emit('error', error);
       };
     } catch (error) {
-      console.error('Failed to connect to WebSocket:', error);
+      console.error('Error connecting to WebSocket:', error);
+      this.emit('error', error);
     }
   }
 
-  private sendAuthData() {
-    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      const authData = {
-        token: 'mock-token',
-        userId: '1',
-        clientId: 'CLIENT001',
-      };
-      this.ws.send(JSON.stringify(authData));
-    }
-  }
-
-  private handleMessage(data: any) {
-    if (data.type === 'OPEN_POSITIONS') {
-      // Update P&L data
-      store.dispatch(updatePnLData({
-        todaysPnL: data.todaysPAndL || 0,
-        positionalPnL: data.positionalPAndL || 0,
-        intradayPnL: data.intradayPAndL || 0,
-        overallPnL: data.overAllUserPAndL || 0,
-        deployedCapital: data.deployedCapital || 0,
-      }));
-    }
-  }
-
-  private attemptReconnect(url: string) {
-    if (this.reconnectAttempts < this.maxReconnectAttempts) {
-      this.reconnectAttempts++;
-      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-      
-      setTimeout(() => {
-        this.connect(url);
-      }, this.reconnectInterval);
-    } else {
-      console.log('Max reconnection attempts reached');
-    }
-  }
-
-  public disconnect() {
+  disconnect() {
     if (this.ws) {
       this.ws.close();
       this.ws = null;
     }
   }
 
-  public send(data: any) {
+  send(data: any) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(data));
+    } else {
+      console.warn('WebSocket is not connected');
+    }
+  }
+
+  private handleReconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts) {
+      this.reconnectAttempts++;
+      console.log(`Attempting to reconnect... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+      
+      setTimeout(() => {
+        this.connect();
+      }, this.reconnectInterval);
+    } else {
+      console.error('Max reconnection attempts reached');
+      this.emit('maxReconnectAttemptsReached');
+    }
+  }
+
+  on(event: string, callback: Function) {
+    if (!this.listeners[event]) {
+      this.listeners[event] = [];
+    }
+    this.listeners[event].push(callback);
+  }
+
+  off(event: string, callback: Function) {
+    if (this.listeners[event]) {
+      this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+    }
+  }
+
+  private emit(event: string, data?: any) {
+    if (this.listeners[event]) {
+      this.listeners[event].forEach(callback => callback(data));
     }
   }
 }
 
-export default WebSocketService.getInstance();
+// Create singleton instance
+const wsService = new WebSocketService('wss://api.example.com/ws'); // Replace with your WebSocket URL
+
+export default wsService;

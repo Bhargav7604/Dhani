@@ -1,17 +1,18 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, List, Switch, Divider } from 'react-native-paper';
-import { useAppDispatch, useAppSelector } from '../../store/store';
+import { Text, Card, List, Switch, Divider } from 'react-native-paper';
+import { useSelector, useDispatch } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
-import Card from '../../components/common/Card';
 import Button from '../../components/common/Button';
-import { colors } from '../../styles/theme';
+import { colors, spacing, typography } from '../../styles/theme';
 
 const ProfileScreen = () => {
-  const dispatch = useAppDispatch();
-  const user = useAppSelector(state => state.auth.user);
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
   const [notificationsEnabled, setNotificationsEnabled] = React.useState(true);
-  const [liveTrading, setLiveTrading] = React.useState(false);
+  const [darkModeEnabled, setDarkModeEnabled] = React.useState(false);
 
   const handleLogout = () => {
     Alert.alert(
@@ -19,132 +20,134 @@ const ProfileScreen = () => {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Logout', 
-          style: 'destructive',
-          onPress: () => dispatch(logout())
-        },
+        { text: 'Logout', onPress: () => dispatch(logout()) },
       ]
     );
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <Text variant="headlineSmall" style={styles.screenTitle}>
-          Profile
-        </Text>
-
-        {/* User Info Card */}
-        <Card style={styles.userCard}>
-          <View style={styles.userInfo}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.title}>Profile</Text>
+        
+        <Card style={styles.profileCard}>
+          <View style={styles.profileHeader}>
             <View style={styles.avatar}>
-              <Text variant="headlineSmall" style={styles.avatarText}>
+              <Text style={styles.avatarText}>
                 {user?.name?.charAt(0) || 'U'}
               </Text>
             </View>
-            <View style={styles.userDetails}>
-              <Text variant="titleMedium" style={styles.userName}>
-                {user?.name || 'User Name'}
-              </Text>
-              <Text variant="bodyMedium" style={styles.userEmail}>
-                {user?.email || 'user@example.com'}
-              </Text>
-              <Text variant="bodySmall" style={styles.clientId}>
-                Client ID: {user?.clientId || 'N/A'}
-              </Text>
+            <View style={styles.userInfo}>
+              <Text style={styles.userName}>{user?.name || 'User'}</Text>
+              <Text style={styles.userEmail}>{user?.email || 'user@example.com'}</Text>
+              <Text style={styles.userRole}>{user?.role || 'User'}</Text>
             </View>
           </View>
         </Card>
-
-        {/* Settings Card */}
+        
         <Card style={styles.settingsCard}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Settings
-          </Text>
-
+          <Text style={styles.cardTitle}>Settings</Text>
+          
           <List.Item
-            title="Push Notifications"
-            description="Receive alerts for strategy updates"
+            title="Notifications"
+            description="Receive trade alerts and updates"
+            left={(props) => <List.Icon {...props} icon="bell" />}
             right={() => (
               <Switch
                 value={notificationsEnabled}
                 onValueChange={setNotificationsEnabled}
-                color={colors.primary}
               />
             )}
           />
-
+          
           <Divider />
-
+          
           <List.Item
-            title="Live Trading Mode"
-            description="Enable real money trading"
+            title="Dark Mode"
+            description="Switch to dark theme"
+            left={(props) => <List.Icon {...props} icon="theme-light-dark" />}
             right={() => (
               <Switch
-                value={liveTrading}
-                onValueChange={setLiveTrading}
-                color={colors.primary}
+                value={darkModeEnabled}
+                onValueChange={setDarkModeEnabled}
               />
             )}
           />
-
+          
           <Divider />
-
-          <List.Item
-            title="Risk Management"
-            description="Configure risk parameters"
-            right={() => <List.Icon icon="chevron-right" />}
-            onPress={() => console.log('Open risk management')}
-          />
-
-          <Divider />
-
+          
           <List.Item
             title="Trading Preferences"
-            description="Set your trading preferences"
-            right={() => <List.Icon icon="chevron-right" />}
-            onPress={() => console.log('Open trading preferences')}
+            description="Configure your trading settings"
+            left={(props) => <List.Icon {...props} icon="cog" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Trading preferences')}
+          />
+          
+          <Divider />
+          
+          <List.Item
+            title="Risk Management"
+            description="Set your risk parameters"
+            left={(props) => <List.Icon {...props} icon="shield-check" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Risk management')}
+          />
+          
+          <Divider />
+          
+          <List.Item
+            title="Help & Support"
+            description="Get help and contact support"
+            left={(props) => <List.Icon {...props} icon="help-circle" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Help & support')}
           />
         </Card>
-
-        {/* Account Actions */}
-        <Card style={styles.actionsCard}>
-          <Text variant="titleMedium" style={styles.sectionTitle}>
-            Account
-          </Text>
-
-          <Button
-            title="Change Password"
-            mode="outlined"
-            onPress={() => console.log('Change password')}
-            style={styles.actionButton}
+        
+        <Card style={styles.accountCard}>
+          <Text style={styles.cardTitle}>Account</Text>
+          
+          <List.Item
+            title="Account Information"
+            description="View and edit your account details"
+            left={(props) => <List.Icon {...props} icon="account" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Account information')}
           />
-
-          <Button
-            title="Export Data"
-            mode="outlined"
-            onPress={() => console.log('Export data')}
-            style={styles.actionButton}
+          
+          <Divider />
+          
+          <List.Item
+            title="Security"
+            description="Change password and security settings"
+            left={(props) => <List.Icon {...props} icon="lock" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Security settings')}
           />
-
-          <Button
-            title="Help & Support"
-            mode="outlined"
-            onPress={() => console.log('Help & support')}
-            style={styles.actionButton}
+          
+          <Divider />
+          
+          <List.Item
+            title="Privacy"
+            description="Manage your privacy preferences"
+            left={(props) => <List.Icon {...props} icon="eye" />}
+            right={(props) => <List.Icon {...props} icon="chevron-right" />}
+            onPress={() => console.log('Privacy settings')}
           />
-
+        </Card>
+        
+        <View style={styles.logoutContainer}>
           <Button
             title="Logout"
-            mode="contained"
             onPress={handleLogout}
+            mode="outlined"
+            color={colors.error}
             style={styles.logoutButton}
-            color={colors.status.error}
           />
-        </Card>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -153,19 +156,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
-    padding: 16,
+  scrollView: {
+    flex: 1,
   },
-  screenTitle: {
-    marginBottom: 20,
-    marginTop: 20,
-    color: colors.text.primary,
-    fontWeight: 'bold',
+  title: {
+    ...typography.h2,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    color: colors.text,
   },
-  userCard: {
-    marginBottom: 16,
+  profileCard: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    padding: spacing.lg,
   },
-  userInfo: {
+  profileHeader: {
     flexDirection: 'row',
     alignItems: 'center',
   },
@@ -176,44 +181,49 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   avatarText: {
+    ...typography.h2,
     color: 'white',
-    fontWeight: 'bold',
   },
-  userDetails: {
+  userInfo: {
     flex: 1,
   },
   userName: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    ...typography.h3,
+    color: colors.text,
+    marginBottom: spacing.xs,
   },
   userEmail: {
-    color: colors.text.tertiary,
-    marginBottom: 4,
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
-  clientId: {
-    color: colors.text.tertiary,
-    fontSize: 12,
+  userRole: {
+    ...typography.caption,
+    color: colors.primary,
+    textTransform: 'uppercase',
   },
   settingsCard: {
-    marginBottom: 16,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-  sectionTitle: {
-    marginBottom: 16,
-    color: colors.text.primary,
-    fontWeight: '600',
+  accountCard: {
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-  actionsCard: {
-    marginBottom: 16,
+  cardTitle: {
+    ...typography.h3,
+    margin: spacing.md,
+    color: colors.text,
   },
-  actionButton: {
-    marginBottom: 8,
+  logoutContainer: {
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.lg,
   },
   logoutButton: {
-    marginTop: 16,
+    marginBottom: spacing.xl,
   },
 });
 

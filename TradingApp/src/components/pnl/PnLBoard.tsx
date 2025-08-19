@@ -1,85 +1,75 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Text } from 'react-native-paper';
-import { useAppSelector } from '../../store/store';
-import Card from '../common/Card';
-import { colors } from '../../styles/theme';
+import { Text, Card } from 'react-native-paper';
+import { colors, spacing, typography } from '../../styles/theme';
+import { formatCurrency } from '../../utils/formatters';
 
-const PnLBoard = () => {
-  const pnlData = useAppSelector(state => state.socket.pnlData);
+interface PnLBoardProps {
+  totalPnl: number;
+  todayPnl: number;
+}
 
-  const pnlItems = [
-    { label: "Today's P&L", value: pnlData.todaysPnL },
-    { label: 'Positional P&L', value: pnlData.positionalPnL },
-    { label: 'Intraday P&L', value: pnlData.intradayPnL },
-    { label: 'Overall P&L', value: pnlData.overallPnL },
-    { label: 'Deployed Capital', value: pnlData.deployedCapital },
-  ];
-
+const PnLBoard: React.FC<PnLBoardProps> = ({ totalPnl, todayPnl }) => {
   return (
-    <Card style={styles.container}>
-      <Text variant="titleMedium" style={styles.title}>
-        P&L Dashboard
-      </Text>
-      
-      <View style={styles.pnlGrid}>
-        {pnlItems.map((item, index) => (
-          <View key={index} style={styles.pnlItem}>
-            <Text variant="bodySmall" style={styles.pnlLabel}>
-              {item.label}
-            </Text>
-            <Text 
-              variant="bodyMedium" 
-              style={[
-                styles.pnlValue,
-                { 
-                  color: item.label.includes('Capital') 
-                    ? colors.text.primary 
-                    : item.value >= 0 
-                      ? colors.status.success 
-                      : colors.status.error 
-                }
-              ]}
-            >
-              ₹{item.value.toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+    <View style={styles.container}>
+      <Card style={styles.pnlCard}>
+        <View style={styles.pnlRow}>
+          <View style={styles.pnlItem}>
+            <Text style={styles.pnlLabel}>Total P&L</Text>
+            <Text style={[
+              styles.pnlValue,
+              { color: totalPnl >= 0 ? colors.profit : colors.loss }
+            ]}>
+              {formatCurrency(totalPnl)}
             </Text>
           </View>
-        ))}
-      </View>
-    </Card>
+          <View style={styles.separator} />
+          <View style={styles.pnlItem}>
+            <Text style={styles.pnlLabel}>Today's P&L</Text>
+            <Text style={[
+              styles.pnlValue,
+              { color: todayPnl >= 0 ? colors.profit : colors.loss }
+            ]}>
+              {formatCurrency(todayPnl)}
+            </Text>
+          </View>
+        </View>
+      </Card>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    margin: 16,
-    marginBottom: 8,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
   },
-  title: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
+  pnlCard: {
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
   },
-  pnlGrid: {
+  pnlRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   pnlItem: {
-    width: '48%',
+    flex: 1,
     alignItems: 'center',
-    marginBottom: 12,
-    padding: 8,
-    backgroundColor: colors.background,
-    borderRadius: 8,
+  },
+  separator: {
+    width: 1,
+    height: 40,
+    backgroundColor: colors.border,
+    marginHorizontal: spacing.md,
   },
   pnlLabel: {
-    color: colors.text.tertiary,
-    marginBottom: 4,
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
     textAlign: 'center',
   },
   pnlValue: {
+    ...typography.h2,
     fontWeight: 'bold',
     textAlign: 'center',
   },

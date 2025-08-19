@@ -1,25 +1,58 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 
-export interface DeployedStrategy {
-  id: number;
+interface DeployedStrategy {
+  id: string;
+  strategyId: string;
   name: string;
-  status: string;
-  capital: number;
-  multiplier: string;
-  execution: string;
+  status: 'running' | 'paused' | 'stopped';
   pnl: number;
-  positionType: string;
+  todayPnl: number;
+  totalTrades: number;
+  winningTrades: number;
+  deployedAt: string;
+  capital: number;
 }
 
 interface DeployedStrategiesState {
   deployedStrategies: DeployedStrategy[];
-  loading: boolean;
+  totalPnl: number;
+  todayPnl: number;
+  isLoading: boolean;
   error: string | null;
 }
 
+const mockDeployedStrategies: DeployedStrategy[] = [
+  {
+    id: '1',
+    strategyId: '1',
+    name: 'Iron Condor Strategy',
+    status: 'running',
+    pnl: 15420.50,
+    todayPnl: 1250.75,
+    totalTrades: 45,
+    winningTrades: 35,
+    deployedAt: '2024-01-15T09:30:00Z',
+    capital: 100000
+  },
+  {
+    id: '2',
+    strategyId: '2',
+    name: 'Bull Call Spread',
+    status: 'paused',
+    pnl: 8750.25,
+    todayPnl: -320.50,
+    totalTrades: 28,
+    winningTrades: 18,
+    deployedAt: '2024-01-10T10:15:00Z',
+    capital: 75000
+  }
+];
+
 const initialState: DeployedStrategiesState = {
-  deployedStrategies: [],
-  loading: false,
+  deployedStrategies: mockDeployedStrategies,
+  totalPnl: 24170.75,
+  todayPnl: 930.25,
+  isLoading: false,
   error: null,
 };
 
@@ -27,23 +60,42 @@ const deployedStrategiesSlice = createSlice({
   name: 'deployedStrategies',
   initialState,
   reducers: {
-    setDeployedStrategies: (state, action: PayloadAction<DeployedStrategy[]>) => {
-      state.deployedStrategies = action.payload;
-    },
-    updateStrategyStatus: (state, action: PayloadAction<{ id: number; status: string }>) => {
-      const strategy = state.deployedStrategies.find(s => s.id === action.payload.id);
-      if (strategy) {
-        strategy.status = action.payload.status;
+    updateDeployedStrategy: (state, action: PayloadAction<DeployedStrategy>) => {
+      const index = state.deployedStrategies.findIndex(s => s.id === action.payload.id);
+      if (index !== -1) {
+        state.deployedStrategies[index] = action.payload;
       }
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
+    pauseStrategy: (state, action: PayloadAction<string>) => {
+      const strategy = state.deployedStrategies.find(s => s.id === action.payload);
+      if (strategy) {
+        strategy.status = 'paused';
+      }
     },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
+    resumeStrategy: (state, action: PayloadAction<string>) => {
+      const strategy = state.deployedStrategies.find(s => s.id === action.payload);
+      if (strategy) {
+        strategy.status = 'running';
+      }
+    },
+    stopStrategy: (state, action: PayloadAction<string>) => {
+      const strategy = state.deployedStrategies.find(s => s.id === action.payload);
+      if (strategy) {
+        strategy.status = 'stopped';
+      }
+    },
+    updatePnl: (state, action: PayloadAction<{ totalPnl: number; todayPnl: number }>) => {
+      state.totalPnl = action.payload.totalPnl;
+      state.todayPnl = action.payload.todayPnl;
     },
   },
 });
 
-export const { setDeployedStrategies, updateStrategyStatus, setLoading, setError } = deployedStrategiesSlice.actions;
+export const { 
+  updateDeployedStrategy, 
+  pauseStrategy, 
+  resumeStrategy, 
+  stopStrategy, 
+  updatePnl 
+} = deployedStrategiesSlice.actions;
 export default deployedStrategiesSlice.reducer;

@@ -1,206 +1,131 @@
-import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, FlatList, RefreshControl } from 'react-native';
-import { Text, Searchbar, Chip, SegmentedButtons } from 'react-native-paper';
-import { useAppDispatch, useAppSelector } from '../../store/store';
-import { setStrategies, setLoading } from '../../store/slices/strategiesSlice';
-import Card from '../../components/common/Card';
+import React from 'react';
+import { View, StyleSheet, ScrollView, FlatList } from 'react-native';
+import { Text, Card, Chip, Searchbar } from 'react-native-paper';
+import { useSelector, useDispatch } from 'react-redux';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { RootState } from '../../store/store';
+import { setSelectedCategory } from '../../store/slices/strategiesSlice';
 import Button from '../../components/common/Button';
-import LoadingSpinner from '../../components/common/LoadingSpinner';
-import { colors } from '../../styles/theme';
-import { Strategy } from '../../store/slices/strategiesSlice';
+import { colors, spacing, typography } from '../../styles/theme';
+import { formatPercentage } from '../../utils/formatters';
 
 const ReadyToDeployScreen = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('inHouse');
-  const [refreshing, setRefreshing] = useState(false);
-  const dispatch = useAppDispatch();
-  const { strategies, loading } = useAppSelector(state => state.strategies);
+  const dispatch = useDispatch();
+  const { strategies, selectedCategory } = useSelector(
+    (state: RootState) => state.strategies
+  );
+  const [searchQuery, setSearchQuery] = React.useState('');
 
-  const mockStrategies = {
-    inHouse: [
-      {
-        id: 1,
-        name: 'Iron Condor Pro',
-        description: 'Balanced iron condor with risk-defined strategies for consistent income generation.',
-        category: 'In-House',
-        minCapital: 50000,
-        status: 'available',
-        drawDown: 5.2,
-        createdAt: Date.now() - 86400000 * 5,
-        subscription: 'N',
-      },
-      {
-        id: 2,
-        name: 'Trend Catcher',
-        description: 'Trend-following strategy using moving averages and momentum indicators.',
-        category: 'In-House',
-        minCapital: 75000,
-        status: 'available',
-        drawDown: 8.1,
-        createdAt: Date.now() - 86400000 * 10,
-        subscription: 'N',
-      },
-    ],
-    popular: [
-      {
-        id: 3,
-        name: 'Volatility Crusher',
-        description: 'Shorting high IV options before earnings announcements.',
-        category: 'Popular',
-        minCapital: 100000,
-        status: 'available',
-        drawDown: 12.5,
-        createdAt: Date.now() - 86400000 * 3,
-        subscription: 'Y',
-      },
-    ],
-    diy: [
-      {
-        id: 4,
-        name: 'My Custom Strategy',
-        description: 'Custom strategy created using the DIY builder.',
-        category: 'DIY',
-        minCapital: 25000,
-        status: 'available',
-        drawDown: 6.8,
-        createdAt: Date.now() - 86400000 * 1,
-        subscription: 'N',
-      },
-    ],
-    preBuilt: [],
+  const categories = ['All', 'In-House', 'Popular', 'DIY'];
+
+  const filteredStrategies = strategies.filter(strategy => {
+    const matchesCategory = selectedCategory === 'All' || strategy.category === selectedCategory;
+    const matchesSearch = strategy.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         strategy.description.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const handleDeploy = (strategyId: string) => {
+    // Handle strategy deployment
+    console.log('Deploying strategy:', strategyId);
   };
 
-  const fetchStrategies = async () => {
-    dispatch(setLoading(true));
-    try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      dispatch(setStrategies(mockStrategies));
-    } catch (error) {
-      console.error('Failed to fetch strategies:', error);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
-
-  useEffect(() => {
-    fetchStrategies();
-  }, []);
-
-  const onRefresh = async () => {
-    setRefreshing(true);
-    await fetchStrategies();
-    setRefreshing(false);
-  };
-
-  const currentStrategies = strategies[selectedCategory as keyof typeof strategies] || [];
-  const filteredStrategies = currentStrategies.filter(strategy =>
-    strategy.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const renderCategoryChip = (category: string) => (
+    <Chip
+      key={category}
+      selected={selectedCategory === category}
+      onPress={() => dispatch(setSelectedCategory(category))}
+      style={styles.categoryChip}
+      mode={selectedCategory === category ? 'flat' : 'outlined'}
+    >
+      {category}
+    </Chip>
   );
 
-  const categoryButtons = [
-    { value: 'inHouse', label: 'In-House' },
-    { value: 'popular', label: 'Popular' },
-    { value: 'diy', label: 'My Strategies' },
-  ];
-
-  const renderStrategyCard = ({ item }: { item: Strategy }) => (
+  const renderStrategyCard = ({ item }: { item: any }) => (
     <Card style={styles.strategyCard}>
       <View style={styles.cardHeader}>
         <View style={styles.strategyInfo}>
-          <Text variant="titleMedium" style={styles.strategyName}>
-            {item.name}
-          </Text>
-          <Chip style={styles.categoryChip} textStyle={styles.categoryText}>
+          <Text style={styles.strategyName}>{item.name}</Text>
+          <Text style={styles.strategyDescription}>{item.description}</Text>
+          <Chip 
+            mode="outlined" 
+            style={styles.categoryTag}
+            compact
+          >
             {item.category}
           </Chip>
         </View>
       </View>
-
-      <Text variant="bodySmall" style={styles.description} numberOfLines={2}>
-        {item.description}
-      </Text>
-
-      <View style={styles.statsRow}>
-        <View style={styles.statItem}>
-          <Text variant="bodySmall" style={styles.statLabel}>Min Capital</Text>
-          <Text variant="bodyMedium" style={styles.statValue}>
-            ₹{item.minCapital.toLocaleString()}
+      
+      <View style={styles.metricsRow}>
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>Returns</Text>
+          <Text style={[
+            styles.metricValue,
+            { color: item.returns >= 0 ? colors.profit : colors.loss }
+          ]}>
+            {formatPercentage(item.returns)}
           </Text>
         </View>
-        <View style={styles.statItem}>
-          <Text variant="bodySmall" style={styles.statLabel}>Drawdown</Text>
-          <Text variant="bodyMedium" style={styles.statValue}>
-            {item.drawDown}%
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>Max Drawdown</Text>
+          <Text style={[styles.metricValue, { color: colors.loss }]}>
+            {formatPercentage(item.maxDrawdown)}
           </Text>
         </View>
-        <View style={styles.statItem}>
-          <Text variant="bodySmall" style={styles.statLabel}>Status</Text>
-          <Text variant="bodyMedium" style={styles.statValue}>
-            {item.subscription === 'Y' ? 'Deployed' : 'Available'}
+        <View style={styles.metric}>
+          <Text style={styles.metricLabel}>Win Rate</Text>
+          <Text style={styles.metricValue}>
+            {formatPercentage(item.winRate)}
           </Text>
         </View>
       </View>
-
-      <View style={styles.buttonRow}>
-        <Button
-          title="Customize"
-          mode="outlined"
-          onPress={() => console.log('Customize strategy')}
-          style={styles.actionButton}
-        />
-        <Button
-          title={item.subscription === 'Y' ? 'Deployed' : 'Deploy'}
-          onPress={() => console.log('Deploy strategy')}
-          style={styles.actionButton}
-          disabled={item.subscription === 'Y'}
-        />
-      </View>
+      
+      <Button
+        title="Deploy Strategy"
+        onPress={() => handleDeploy(item.id)}
+        style={styles.deployButton}
+        mode="contained"
+      />
     </Card>
   );
 
-  if (loading && currentStrategies.length === 0) {
-    return <LoadingSpinner />;
-  }
-
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <Text variant="headlineSmall" style={styles.screenTitle}>
-          Ready to Deploy
-        </Text>
-
-        <SegmentedButtons
-          value={selectedCategory}
-          onValueChange={setSelectedCategory}
-          buttons={categoryButtons}
-          style={styles.segmentedButtons}
-        />
-
+    <SafeAreaView style={styles.container}>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.title}>Ready to Deploy</Text>
+        
         <Searchbar
           placeholder="Search strategies..."
           onChangeText={setSearchQuery}
           value={searchQuery}
           style={styles.searchBar}
         />
-
-        <FlatList
-          data={filteredStrategies}
-          renderItem={renderStrategyCard}
-          keyExtractor={(item) => item.id.toString()}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text variant="bodyLarge" style={styles.emptyText}>
-                No strategies available in this category
-              </Text>
-            </View>
-          }
-        />
-      </View>
-    </View>
+        
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContent}
+        >
+          {categories.map(renderCategoryChip)}
+        </ScrollView>
+        
+        <View style={styles.strategiesSection}>
+          <Text style={styles.sectionTitle}>
+            {selectedCategory === 'All' ? 'All Strategies' : `${selectedCategory} Strategies`}
+            {` (${filteredStrategies.length})`}
+          </Text>
+          <FlatList
+            data={filteredStrategies}
+            renderItem={renderStrategyCard}
+            keyExtractor={(item) => item.id}
+            scrollEnabled={false}
+          />
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
@@ -209,85 +134,80 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  content: {
+  scrollView: {
     flex: 1,
-    padding: 16,
   },
-  screenTitle: {
-    marginBottom: 16,
-    marginTop: 20,
-    color: colors.text.primary,
-    fontWeight: 'bold',
-  },
-  segmentedButtons: {
-    marginBottom: 16,
+  title: {
+    ...typography.h2,
+    textAlign: 'center',
+    marginVertical: spacing.lg,
+    color: colors.text,
   },
   searchBar: {
-    marginBottom: 16,
-    backgroundColor: colors.surface,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+  },
+  categoriesContainer: {
+    marginBottom: spacing.lg,
+  },
+  categoriesContent: {
+    paddingHorizontal: spacing.md,
+  },
+  categoryChip: {
+    marginRight: spacing.sm,
+  },
+  strategiesSection: {
+    marginTop: spacing.md,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.md,
+    color: colors.text,
   },
   strategyCard: {
-    marginBottom: 8,
+    marginHorizontal: spacing.md,
+    marginVertical: spacing.xs,
+    padding: spacing.md,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 8,
+    marginBottom: spacing.md,
   },
   strategyInfo: {
     flex: 1,
   },
   strategyName: {
-    color: colors.text.primary,
-    fontWeight: 'bold',
-    marginBottom: 4,
+    ...typography.h3,
+    marginBottom: spacing.xs,
+    color: colors.text,
   },
-  categoryChip: {
-    backgroundColor: colors.border.secondary,
+  strategyDescription: {
+    ...typography.body,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+  },
+  categoryTag: {
     alignSelf: 'flex-start',
   },
-  categoryText: {
-    fontSize: 10,
-    color: colors.text.secondary,
-  },
-  description: {
-    color: colors.text.tertiary,
-    marginBottom: 12,
-    lineHeight: 18,
-  },
-  statsRow: {
+  metricsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
-  statItem: {
+  metric: {
     alignItems: 'center',
   },
-  statLabel: {
-    color: colors.text.tertiary,
-    marginBottom: 4,
+  metricLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
   },
-  statValue: {
-    color: colors.text.primary,
-    fontWeight: '600',
+  metricValue: {
+    ...typography.body,
+    fontWeight: 'bold',
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50,
-  },
-  emptyText: {
-    color: colors.text.tertiary,
-    textAlign: 'center',
+  deployButton: {
+    marginTop: spacing.sm,
   },
 });
 
