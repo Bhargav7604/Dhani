@@ -1,0 +1,24 @@
+{
+  "projects": {
+    "web": {
+      "rootDirectory": "apps/web",
+      "buildCommand": "npm run build",
+      "outputDirectory": "apps/web/dist"
+    },
+    "admin": {
+      "rootDirectory": "apps/admin",
+      "buildCommand": "npm run build",
+      "outputDirectory": "apps/admin/dist"
+    }
+  },
+  "routes": [
+    {
+      "src": "/admin/(.*)",
+      "dest": "apps/admin/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "apps/web/$1"
+    }
+  ]
+}

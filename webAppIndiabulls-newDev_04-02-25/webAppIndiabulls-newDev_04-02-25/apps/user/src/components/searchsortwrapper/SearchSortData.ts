@@ -1,0 +1,15 @@
+export const QuantityData  = [
+    { key: "1", val: 1 },
+    { key: "2", val: 2 },
+    { key: "3", val: 3 },
+    { key: "4", val: 4 },
+    { key: "5", val: 5 },
+    { key: "6", val: 6 },
+    { key: "7", val: 7 },
+    { key: "8", val: 8 },
+    { key: "9", val: 9 },
+    { key: "10", val: 10 },
+    { key: "15", val: 15 },
+    { key: "20", val: 20 },
+    { key: "30", val: 30 },
+  ];

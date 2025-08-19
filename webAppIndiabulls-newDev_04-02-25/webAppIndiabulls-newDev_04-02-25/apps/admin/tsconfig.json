@@ -1,0 +1,11 @@
+{
+  "files": [],
+  "compilerOptions": {
+    "outDir": "./dist/app", // Adjust path as needed
+    "rootDir": "./src/app"
+  },
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/**/*",
+    "../../packages/ui/src/sharedcomponents/buffer",
+    "../../packages/ui/src/sharedcomponents/toasters",
+    "../../packages/ui/src/sharedcomponents/togglebutton",
+    "../../packages/ui/src/sharedcomponents/timepicker",
+    "../../packages/ui/src/sharedcomponents/formfields/NoCodeInputComp.tsx",
+    "../../packages/ui/src/sharedcomponents/nosearch"
+  ]
+}
